@@ -21,7 +21,7 @@ class GoogleOauth2Session:
 
 gg_client_id = 'YOUR_GOOGLE_CLIENT_ID'
 gg_secret_key = 'YOUR_GOOGLE_SECRET_KEY'
-gg_redirect_uri = 'http://localhost:5000/users/auth/google/callback/' # Change this to your domain
+gg_redirect_uri = 'http://localhost:5000/users/auth/google/callback/'
 gg_scopes=[
         "openid", 
         "https://www.googleapis.com/auth/userinfo.profile", 
@@ -70,7 +70,7 @@ class GithubOauth2:
     
 gh_client_id = 'YOUR_GITHUB_CLIENT_ID'
 gh_secret_key = 'YOUR_GITHUB_SECRET_KEY'
-gh_redirect_uri = 'http://localhost:5000/users/auth/github/callback/' # Change this to your domain  
+gh_redirect_uri = 'http://localhost:5000/users/auth/github/callback/'
 gh_scopes = None
 github_oauth2 = GithubOauth2(gh_client_id, gh_secret_key, gh_redirect_uri, gh_scopes)
 
@@ -83,7 +83,7 @@ class LinkedinOauth2:
 
     def get_auth_url(self):
         state = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-        auth_url = f"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}&state={state}&scope=openid,profile,email"
+        auth_url = f"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}&state={state}&scope={self.scope}"
         return auth_url, state
     
     def get_token(self, code:str):
@@ -104,7 +104,7 @@ class LinkedinOauth2:
             headers = {
                 'Authorization': f'Bearer {token}',
             }
-            user_url = 'https://api.linkedin.com/v2/me' #https://api.linkedin.com/v2/userinfo
+            user_url = 'https://api.linkedin.com/v2/userinfo' #https://api.linkedin.com/v2/userinfo
             response = requests.get(user_url, headers=headers)
             if response.status_code == 200:
                 return response.json()
@@ -112,8 +112,8 @@ class LinkedinOauth2:
         except Exception as e:
             return None
         
-lk_client_id = 'LINKEDIN_CLIENT_ID'
-lk_secret_key = 'LINKEDIN_SECRET_KEY'
-lk_redirect_uri = 'http://localhost:5000/users/auth/linkedin/callback/' # Change this to your domain
+lk_client_id = 'YOUR_LINKEDIN_CLIENT_ID'
+lk_secret_key = 'YOUR_LINKEDIN_SECRET_KEY'
+lk_redirect_uri = 'http://localhost:5000/users/auth/linkedin/callback/'
 lk_scopes = ['openid','profile','email']
 linkedin_oauth2 = LinkedinOauth2(lk_client_id, lk_secret_key, lk_redirect_uri, lk_scopes)

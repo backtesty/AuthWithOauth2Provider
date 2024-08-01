@@ -4,9 +4,17 @@ from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout
 from django.contrib import messages
-from .utils import google_oauth2, github_oauth2, linkedin_oauth2
+from .oauth import google_oauth2, github_oauth2, linkedin_oauth2
 from .models import Profile
 # Create your views here.
+
+class IndexView(TemplateView):
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('users:profile')
+        else:
+            return redirect('users:login')
 
 class ProfileView(TemplateView):
     template_name = 'app_users/profile.html'
@@ -34,7 +42,6 @@ class LoginView(TemplateView):
             return redirect(auth_url)
         elif provider == 'linkedin':
             auth_url, state = linkedin_oauth2.get_auth_url()
-            print(auth_url)
             request.session['state'] = state
             return redirect(auth_url)
         return super().get(request, *args, **kwargs)
@@ -57,7 +64,7 @@ class GoogleCallbackView(TemplateView):
         given_name = user_info.get('given_name')
         family_name = user_info.get('family_name')
         picture = user_info.get('picture')
-        provider = 'Github'
+        provider = 'Google'
 
         if User.objects.filter(username=email).exists():
             user = get_object_or_404(User, username=email)
@@ -131,24 +138,45 @@ class LinkedinCallbackView(TemplateView):
             messages.error(request, 'Invalid state')
             return redirect('users:login')
         
-        token = linkedin_oauth2.get_token(request.GET.get('code'))
+        error = request.GET.get('error', None)
+        if error:
+            messages.error(request, error)
+            return redirect('users:login')
+        
+        code = request.GET.get('code')
+        if code is None:
+            messages.error(request, 'Invalid code')
+            return redirect('users:login')
+
+        token = linkedin_oauth2.get_token(code)
 
         if token is None:
             messages.error(request, 'Invalid token')
             return redirect('users:login')
         
-        user_info = linkedin_oauth2.get_user_info(token.get('access_token'))
+        access_token = token.get('access_token')
+
+        user_info = linkedin_oauth2.get_user_info(access_token)
+        if user_info is None:
+            messages.error(request, 'Invalid user info')
+            return redirect('users:login')
 
         email = user_info.get('email')
-        name = user_info.get('name')
-        avatar = user_info.get('avatar_url')
+        given_name = user_info.get('given_name')
+        family_name = user_info.get('family_name')
+        avatar = user_info.get('picture')
         provider = 'Linkedin'
+        import requests
+        resp = requests.get(avatar, stream=True)
+        if resp.status_code == 200:
+            with open(f'static/images/{email}.jpg', 'wb') as f:
+                f.write(resp.content)
         
         if User.objects.filter(username=email).exists():
             user = get_object_or_404(User, username=email)
         else:
             user = User.objects.create_user(username=email, email=email,\
-                                                first_name=name)
+                                                first_name=given_name, last_name=family_name)
             Profile.objects.create(user=user, token_details=token, provider=provider,\
                                                 avatar = avatar, extra_info=json.dumps(user_info))
         login(request, user)

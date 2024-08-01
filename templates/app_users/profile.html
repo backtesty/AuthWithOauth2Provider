@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -17,12 +18,18 @@
                 {% include 'includes/messages.html' %}
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title">Usuario autenticado</h5>
+                        <h5 class="card-title">Usuario autenticado con {{request.user.profile.provider}}</h5>
                         <h6 class="card-subtitle mb-2 text-body-secondary">{{request.user.first_name}}
                             {{request.user.last_name}}</h6>
                         <p class="card-text">{{request.user.email}}</p>
-                        <img src="{{request.user.profile.avatar}}" class="border border-primary"
-                            style="border-radius: 10px;" alt="Picturer {{request.user.first_name}}" width="120">
+
+                        {% if request.user.profile.provider == 'linkedin' %}
+                        <img src="/static/images/{{request.user.email}}.jpg" class="border border-primary"
+                            style="border-radius: 10px;" alt="Avatar {{request.user.first_name}}">
+                        {% else %}
+                        <img src="{{request.user.profile.avatar}}" alt="Avatar {{request.user.first_name}}"
+                            class="border border-primary" style="border-radius: 10px;" width="120">
+                        {% endif %}
                         <hr>
                         <a href="{% url 'users:logout' %}" class="card-link text-danger me-3">Cerrar sesión</a>
                     </div>
